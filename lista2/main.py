@@ -1,8 +1,9 @@
-# Autor mechaniki Reversi:
+# Reversi game mechanics author:
 #   Dr inż. Piotr Syga
-# Źródło:
+# Source:
 #   https://syga.kft.pwr.edu.pl/courses/siiiw/reversi.py
 
+import sys
 
 class Reversi:
     def __init__(self):
@@ -10,7 +11,39 @@ class Reversi:
         self.board[3][3] = self.board[4][4] = 1
         self.board[3][4] = self.board[4][3] = 2
         self.current_player = 1
+
+    @classmethod
+    def from_stdin(self):
+        result_board = []
+        while len(result_board) < 8:
+            line = sys.stdin.readline().rstrip()
+            if line != "":
+                result_board.append(map(lambda str : int(str), line.split(" ")))
+        self.current_player = self.determine_player_turn(result_board)
+        self.board = result_board
     
+    def to_string(self):
+        string_board = ""
+        for row in self.board:
+            string_board += " ".join(row) + "\n"
+    
+    def determine_player_turn(board):
+        ones = 0
+        twos = 0
+        for row in board:
+            for col in row:
+                match col:
+                    case 0:
+                        continue
+                    case 1:
+                        ones += 1
+                    case 2:
+                        twos += 1
+        if ones == twos:
+            return 1
+        else:
+            return 2
+
     def get_valid_moves(self):
         moves = []
         for row in range(8):
@@ -70,9 +103,81 @@ class Reversi:
             return 2
         else:
             return 0
+    
+    # Various strategy components
+    def pieces_score(self):
+        score = 0
+        for row in self.board:
+            for col in row:
+                if col == self.current_player:
+                    score += 1
+        return score
+    
+    def flexibility_score(self):
+        return len(self.get_valid_moves())
+    
+    def opponents_neighbors_score(self):
+        score = 0
+        opponent = 3 - self.current_player
+        for row in range(8):
+            for col in range(8):
+                if self.board[row][col] == opponent:
+                    neighbors = self.get_neighbors(row, col)
+                    score += neighbors.count(self.current_player)
+        return score
+    
+    def opportunities_score(self):
+        score = 0
+        opponent = 3 - self.current_player
+        for row in range(8):
+            for col in range(8):
+                if self.board[row][col] == opponent:
+                    neighbors = self.get_neighbors(row, col)
+                    score += neighbors.count(0)
+        return score
+
+    def get_weighted_score(self, weight_list):
+        return self.pieces_score()              * weight_list[0] + \
+               self.flexibility_score()         * weight_list[1] + \
+               self.opponents_neighbors_score() * weight_list[2] + \
+               self.opportunities_score()       * weight_list[3]
+
+    # Utility functions
+    def get_neighbors(self, row, col):
+        neighbors = []
+        origin = (row-1, col-1)
+        size = (3, 3)
+        if origin[0] < 0:
+            origin = (0, origin[1])
+            size = (size[0]-1, size[1])
+        elif origin[0] + size[1] >= 8:
+            origin = (6, origin[1])
+            size = (size[0]-1, size[1])
+        
+        if origin[1] < 0:
+            origin = (origin[0], 0)
+            size = (size[0], size[1]-1)
+        elif origin[1] + size[1] >= 8:
+            origin = (origin[0], 6)
+            size = (size[0], size[1]-1)
+        
+
+        for height in range(size[0]):
+            for width in range(size[1]):
+                scanned_point = (origin[0]+height, origin[1] + width)
+                if scanned_point[0] == row and scanned_point[1] == col:
+                    continue
+                neighbors.append(self.board[scanned_point[0]][scanned_point[1]])
+        return neighbors
+
 
 def main():
     game = Reversi()
+    print(game.get_neighbors(3,3))
+    print(game.pieces_score())
+    print(game.flexibility_score())
+    print(game.opponents_neighbors_score())
+    print(game.opportunities_score())
     counter = 0
     while True:
         valid_moves = game.get_valid_moves()
