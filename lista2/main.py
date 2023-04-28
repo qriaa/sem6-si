@@ -298,7 +298,6 @@ def main2():
         if game.current_player == 1:
             print(f"Player {game.current_player}'s turn")
             print(game.to_string())
-            #print_board(game.board)
             print(f"Valid moves: {valid_moves}")
             row, col = map(int, input("Enter row and column: ").split())
             if (row, col) in valid_moves:
