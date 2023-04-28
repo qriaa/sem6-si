@@ -272,7 +272,99 @@ class Minimax:
         self.current = newChild
 
     
+class AlphaBetaCut:
 
+    class Node:
+        def __init__(self, game, move):
+            self.children = []
+            self.score = 0
+            self.game = game
+            self.move = move
+
+    def __init__(self, game, player, depth, strategy_table):
+        self.player = player
+        self.depth = depth
+        self.strategy_table = strategy_table
+        self.root = self.Node(copy.deepcopy(game), ())
+        self.current = self.root
+    
+    def run(self, node, curr_depth, alpha, beta):
+        if node.game.finish_check():
+            winner = node.game.get_winner()
+            if winner == 0:
+                return 0
+            elif winner == self.player:
+                return float('inf')
+            else:
+                return float('-inf')
+        
+        if curr_depth == self.depth:
+            return node.game.get_weighted_score(self.strategy_table, self.player)
+        
+        for move in node.game.get_valid_moves(node.game.current_player):
+            child_exists_flag = False
+            for child in node.children:
+                if child.move == move:
+                    child_exists_flag = True
+                    break
+            if child_exists_flag:
+                continue
+
+            new_game = copy.deepcopy(node.game)
+            new_game.make_move(move[0], move[1])
+
+            node.children.append(
+                self.Node(
+                    new_game,
+                    move)
+                )
+
+        if node.game.current_player == self.player:
+            for child in node.children:
+                result = self.run(child, curr_depth+1, alpha, beta)
+                if result > alpha:
+                    alpha = result
+                if alpha >= beta:
+                    node.score = alpha
+                    return alpha
+            node.score = alpha
+            return alpha
+
+        else:
+            for child in node.children:
+                result = self.run(child, curr_depth+1, alpha, beta)
+                if result < beta:
+                    beta = result
+                if alpha >= beta:
+                    node.score = beta
+                    return beta
+            node.score = beta
+            return beta
+    
+    def make_best_move(self):
+        self.run(self.current, 0, float('-inf'), float('inf'))
+        best_score = float('-inf')
+        best_child = None
+        for child in self.current.children:
+            if child.score > best_score:
+                best_score = child.score
+                best_child = child
+        self.current = best_child
+        return best_child.move
+    
+    def make_enemy_move(self, move):
+        for child in self.current.children:
+            if child.move == move:
+                self.current = child
+                return
+
+        new_game = copy.deepcopy(self.current.game)
+        new_game.make_move(move[0], move[1])
+
+        newChild = self.Node(new_game, move)
+
+        self.current.children.append(newChild)
+        self.current = newChild
 
                 
 
@@ -282,7 +374,7 @@ class Minimax:
 
 
 
-def reversi_human_game():
+def minmax_human_game():
     game = Reversi()
     algo = Minimax(game, 1, 4, [1, 1, 1, 1])
     while True:
@@ -312,7 +404,35 @@ def reversi_human_game():
                 print("Invalid move")
                 game.current_player = 3 - game.current_player
 
-
+def alphabetacut_human_game():
+    game = Reversi()
+    algo = AlphaBetaCut(game, 1, 4, [1, 1, 1, 1])
+    while True:
+        valid_moves = game.get_valid_moves(game.current_player)
+        if not valid_moves:
+            counter += 1
+            if counter == 2:
+                break
+            else:
+                print("No valid moves")
+                game.current_player = 3 - game.current_player
+                continue
+        if game.current_player == 1:
+            print("Alpha-Beta cut's move")
+            best_move = algo.make_best_move()
+            print(f"Its move is: {best_move}")
+            game.make_move(best_move[0], best_move[1])
+        else:
+            print(f"Player {game.current_player}'s turn")
+            print(game.to_string())
+            print(f"Valid moves: {valid_moves}")
+            row, col = map(int, input("Enter row and column: ").split())
+            if (row, col) in valid_moves:
+                game.make_move(row, col)
+                algo.make_enemy_move((row, col))
+            else:
+                print("Invalid move")
+                game.current_player = 3 - game.current_player
 
 
 
@@ -361,4 +481,4 @@ def print_board(board):
         print("\n  +-+-+-+-+-+-+-+-+")
 
 if __name__ == "__main__":
-    reversi_human_game()
+    alphabetacut_human_game()
