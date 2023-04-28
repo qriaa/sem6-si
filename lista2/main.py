@@ -284,7 +284,7 @@ class Minimax:
 
 def main2():
     game = Reversi()
-    algo = Minimax(game, 2, 4, [1, 1, 1, 1]) #TODO: fix bad algo behavior
+    algo = Minimax(game, 2, 4, [1, 1, 1, 1])
     while True:
         valid_moves = game.get_valid_moves(game.current_player)
         if not valid_moves:
