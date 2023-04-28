@@ -282,9 +282,9 @@ class Minimax:
 
 
 
-def main2():
+def reversi_human_game():
     game = Reversi()
-    algo = Minimax(game, 2, 4, [1, 1, 1, 1])
+    algo = Minimax(game, 1, 4, [1, 1, 1, 1])
     while True:
         valid_moves = game.get_valid_moves(game.current_player)
         if not valid_moves:
@@ -296,6 +296,11 @@ def main2():
                 game.current_player = 3 - game.current_player
                 continue
         if game.current_player == 1:
+            print("Minmax's move")
+            best_move = algo.make_best_move()
+            print(f"Its move is: {best_move}")
+            game.make_move(best_move[0], best_move[1])
+        else:
             print(f"Player {game.current_player}'s turn")
             print(game.to_string())
             print(f"Valid moves: {valid_moves}")
@@ -306,11 +311,7 @@ def main2():
             else:
                 print("Invalid move")
                 game.current_player = 3 - game.current_player
-        else:
-            print("Minmax's move")
-            best_move = algo.make_best_move()
-            print(f"Its move is: {best_move}")
-            game.make_move(best_move[0], best_move[1])
+
 
 
 
@@ -360,4 +361,4 @@ def print_board(board):
         print("\n  +-+-+-+-+-+-+-+-+")
 
 if __name__ == "__main__":
-    main2()
+    reversi_human_game()
