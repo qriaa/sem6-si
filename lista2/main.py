@@ -261,6 +261,15 @@ class Minimax:
         for child in self.current.children:
             if child.move == move:
                 self.current = child
+                return
+
+        new_game = copy.deepcopy(self.current.game)
+        new_game.make_move(move[0], move[1])
+
+        newChild = self.Node(new_game, move)
+
+        self.current.children.append(newChild)
+        self.current = newChild
 
     
 
@@ -299,7 +308,9 @@ def main2():
                 print("Invalid move")
                 game.current_player = 3 - game.current_player
         else:
+            print("Minmax's move")
             best_move = algo.make_best_move()
+            print(f"Its move is: {best_move}")
             game.make_move(best_move[0], best_move[1])
 
 
