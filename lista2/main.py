@@ -136,7 +136,7 @@ class Reversi:
         return len(self.get_valid_moves(pov))
     
     def blocking_score(self, pov):
-        return len(self.get_valid_moves(3 - pov))
+        return -len(self.get_valid_moves(3 - pov))
     
     def opponents_neighbors_score(self, pov):
         score = 0
@@ -237,18 +237,15 @@ class Searchtree:
         return self.last_nodes_visited
     
     def make_enemy_move(self, move):
-        for child in self.current.children:
-            if child.move == move:
-                self.current = child
-                return
-
         new_game = copy.deepcopy(self.current.game)
         new_game.make_move(move[0], move[1])
 
         newChild = self.Node(new_game, move)
 
-        self.current.children.append(newChild)
         self.current = newChild
+    
+    def turn_skipped(self):
+        self.current.game.current_player = 3 - self.current.game.current_player
     
     def make_children_for_node(self, node):
         for move in node.game.get_valid_moves(node.game.current_player):
@@ -348,11 +345,12 @@ class Searchtree:
 class Game:
 
     class Player:
-        def __init__(self, tag, get_move_fun, enemy_move_fun, metadata_getter):
+        def __init__(self, tag, get_move_fun, enemy_move_fun, metadata_getter, turn_skipper):
             self.tag = tag
             self.move_fun = get_move_fun
             self.enemy_move_fun = enemy_move_fun
             self.metadata_getter = metadata_getter
+            self.turn_skipper = turn_skipper
 
 
         @classmethod
@@ -368,7 +366,8 @@ class Game:
                        minmax_searchtree.make_best_move,
                        minmax_searchtree.make_enemy_move,
                        (minmax_searchtree.get_algo_move_time,
-                            minmax_searchtree.get_algo_nodes_visited))
+                            minmax_searchtree.get_algo_nodes_visited),
+                        minmax_searchtree.turn_skipped)
 
         @classmethod
         def get_alphabeta_player(cls, alphabeta_searchtree):
@@ -376,7 +375,8 @@ class Game:
                        alphabeta_searchtree.make_best_move,
                        alphabeta_searchtree.make_enemy_move,
                        (alphabeta_searchtree.get_algo_move_time,
-                            alphabeta_searchtree.get_algo_nodes_visited))
+                            alphabeta_searchtree.get_algo_nodes_visited),
+                        alphabeta_searchtree.turn_skipped)
 
         def get_move(self):
             return self.move_fun()
@@ -390,6 +390,11 @@ class Game:
             if self.metadata_getter == None:
                 return
             return (self.metadata_getter[0](), self.metadata_getter[1]())
+        
+        def skip_turn(self):
+            if self.skip_turn is None:
+                return
+            self.turn_skipper()
 
 
     def __init__(self, reversi, player1, player2):
@@ -410,6 +415,8 @@ class Game:
                 else:
                     print("No valid moves")
                     self.game.current_player = 3 - self.game.current_player
+                    self.player1.skip_turn()
+                    self.player2.skip_turn()
                     continue
             counter = 0
             self.rounds += 1
