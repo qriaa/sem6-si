@@ -1,23 +1,74 @@
 \documentclass[12pt, a4paper]{article}
 \usepackage[polish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
 
 \title{Sztuczna inteligencja i inżynieria wiedzy \\ Lista 2}
 \author{Gabriel Urbaniak 260428}
 \date{\today}
 
-\newtheorem{definicja}{Definicja}
+\newtheorem{definition}{Definicja}
 
 \begin{document}
 \maketitle
 
 \section{Problem}
-\begin{definicja}
-    abab
-\end{definicja}
 
-\begin{definicja}
-    baba
-\end{definicja}
+\subsection{Reversi}
+Reversi to gra:
+\begin{itemize}
+    \item dwuosobowa,
+    \item o sumie zerowej,
+    \item niekooperacyjna,
+    \item całkowicie deterministyczna,
+    \item w której każdy gracz ma pełną informację o stanie gry,
+    \item o skończonym czasie rozgrywki.
+\end{itemize}
+
+Zadaniem gracza w Reversi jest zwycięstwo przez posiadanie najwiekszej ilości pionków na koniec gry.
+
+Formalny opis gry Reversi:
+\begin{definition}[Gracz]
+    Gracz $\boldsymbol{G} \in \{B, C\}$ to gracz grający w grę Reversi.
+    Może wykonać ruch po ruchu przeciwnika lub jako pierwszy, gdy $\boldsymbol{G} = B$
+\end{definition}
+
+\begin{definition}[Plansza]
+    Plansza to macierz $\boldsymbol{P} = (p_{ij})_{1 \le i \le 8,\text{ } 1 \le j \le 8}$, gdzie $p$ to pole na tej planszy.
+    Pole może mieć trzy różne stany: $ \boldsymbol{S} = \{0, B, C\}, p_{ij} \in \boldsymbol{S} $.
+\end{definition}
+
+\begin{definition}[Ruch]
+    Gracz może się ruszyć przez postawienie swojego \\ pionka na dowolne z wolnych pól $p_{ij} = 0$
+    zmieniając jego symbol na $B$ lub $C$ zależnie od symbolu gracza dopóki jest w stanie przejąć pionki przeciwnika.
+    Jeśli nie jest w stanie przejąć ani jednym ruchem pionka przeciwnika, to ruch gracza jest pomijany.
+\end{definition}
+
+\begin{definition}[Przejęcie]
+    Przy postawieniu pionka jednego z graczy $\boldsymbol{G}$ na pole $p_{ij}$ należy sprawdzić, czy sąsiadujące pola
+    $p_{i \pm 1 j \pm 1}$ należą do przeciwnika. Jeśli tak, to wszystkie pionki przeciwnika w linii prostej w
+    pionie, poziomie lub przekątnej macierzy przecinającą pole $p_{ij}$ w kierunku tego pionka przeciwnika zostają przejęte
+    przez gracza $\boldsymbol{G}$, czyli zmienione na jego symbol, pod warunkiem, że linia ta kończy się również jego pionkiem.
+\end{definition}
+
+\begin{definition}[Koniec gry]
+    Gra się kończy, gdy żaden z graczy $\boldsymbol{G}$ nie może wykonać ruchu.
+    Zliczane są wszystkie pola planszy $\boldsymbol{P}$ według ich stanu $\boldsymbol{S}$.
+\end{definition}
+
+\subsection{Metoda}
+
+\begin{definition}[Stan gry]
+    Stan gry to $\boldsymbol{R_{s}} = (\boldsymbol{P}, \boldsymbol{G})$, gdzie $\boldsymbol{P}$ to plansza, a $\boldsymbol{G}$ to gracz,
+    który miałby wykonywać teraz ruch. 
+\end{definition}
+
+\begin{definition}[Drzewo decyzyjne]
+    Drzewo decyzyjne to $\boldsymbol{N} = (C, S, \boldsymbol{R_s}), \\
+    C = \{\boldsymbol{N}_1, \boldsymbol{N}_2, ...,  \boldsymbol{N}_n\} \lor \emptyset,
+    S \in \mathbb{R} $, gdzie N jest węzłem, a S wynikiem funkcji oceniającej dla danego węzła.
+\end{definition}
 
 \section{Podsumowanie}
 
