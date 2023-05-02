@@ -1,8 +1,13 @@
 \documentclass[12pt, a4paper]{article}
 \usepackage[polish]{babel}
 \usepackage[T1]{fontenc}
+\usepackage{csquotes}
 \usepackage{amsmath}
+\usepackage{array}
 \usepackage{amsfonts}
+\usepackage{hyperref}
+\usepackage{biblatex}
+\addbibresource{citations.bib}
 
 \title{Sztuczna inteligencja i inżynieria wiedzy \\ Lista 2}
 \author{Gabriel Urbaniak 260428}
@@ -26,9 +31,9 @@ Reversi to gra:
     \item o skończonym czasie rozgrywki.
 \end{itemize}
 
-Zadaniem gracza w Reversi jest zwycięstwo przez posiadanie najwiekszej ilości pionków na koniec gry.
+Zadaniem gracza w Reversi jest zwycięstwo przez stawianie pionków na planszy w taki sposób, by przejąć pionki przeciwnika -
+na koniec gry należy posiadać najwięcej pionków, by wygrać.
 
-Formalny opis gry Reversi:
 \begin{definition}[Gracz]
     Gracz $\boldsymbol{G} \in \{B, C\}$ to gracz grający w grę Reversi.
     Może wykonać ruch po ruchu przeciwnika lub jako pierwszy, gdy $\boldsymbol{G} = B$
@@ -55,14 +60,40 @@ Formalny opis gry Reversi:
 \begin{definition}[Koniec gry]
     Gra się kończy, gdy żaden z graczy $\boldsymbol{G}$ nie może wykonać ruchu.
     Zliczane są wszystkie pola planszy $\boldsymbol{P}$ według ich stanu $\boldsymbol{S}$.
+    Jeśli liczba czarnych pionków i białych jest taka sama, żaden z graczy nie wygrywa.
+    W przeciwnym przypadku wygrywa gracz, który posiada na planszy więcej pionków od drugiego.
 \end{definition}
-
-\subsection{Metoda}
 
 \begin{definition}[Stan gry]
     Stan gry to $\boldsymbol{R_{s}} = (\boldsymbol{P}, \boldsymbol{G})$, gdzie $\boldsymbol{P}$ to plansza, a $\boldsymbol{G}$ to gracz,
     który miałby wykonywać teraz ruch. 
 \end{definition}
+
+\begin{definition}[Stan początkowy]
+    Początkowym stanem gry jest:
+    $$\boldsymbol{R_{s}}^\prime = (\boldsymbol{P}^\prime, B)$$
+    $$
+        \boldsymbol{P}^\prime = 
+        \begin{bmatrix}
+            0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+            0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+            0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+            0 & 0 & 0 & B & C & 0 & 0 & 0 \\
+            0 & 0 & 0 & C & B & 0 & 0 & 0 \\
+            0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+            0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+            0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+        \end{bmatrix}
+    $$
+\end{definition}
+
+\subsection{Metoda}
+
+Problem możnaby było rozwiązać przez sprawdzenie każdego możliwego ruchu jaki istnieje, 
+jednak wymagałoby to ogromnej mocy obliczeniowej. Z tego powodu najlepszy możliwy ruch w danej sytuacji 
+będzie znajdywany przez częściowe rozwinięcie drzewa gry. Aby ocenić grę, która jeszcze się nie zakończyła
+należy stworzyć \textbf{funkcję oceniającą} która mogłaby wartością numeryczną ocenić dobroć sytuacji dla algorytmu
+przeszukującego \textbf{drzewo decyzyjne}.
 
 \begin{definition}[Drzewo decyzyjne]
     Drzewo decyzyjne to $\boldsymbol{N} = (C, S, \boldsymbol{R_s}), \\
@@ -70,6 +101,194 @@ Formalny opis gry Reversi:
     S \in \mathbb{R} $, gdzie N jest węzłem, a S wynikiem funkcji oceniającej dla danego węzła.
 \end{definition}
 
-\section{Podsumowanie}
+\begin{definition}[Funkcja oceniająca (heurystyczna)]
+    $$f = w_1 \cdot x_1 + w_2 \cdot x_2 + ... + w_n \cdot x_n$$
+    $f$ to funkcja oceniająca, gdzie $x_n$ to pewna miara stanu planszy,
+    a $w_n$ to waga odpowiedniej miary stanu planszy.
+\end{definition}
 
+Algorytmem, który będzie wykorzystywał owe dane będzie \textbf{Minimax} oraz jego modyfikacja -
+\textbf{Alfa-beta cięcie}, które pozwoli na omijanie węzłów które już nie ma sensu przeszukiwać, by
+oszczędzić trochę mocy obliczeniowej w celu poprawy np. głębokości drzewa bądź czasu wykonania algorytmu.
+
+\section{Implementacja}
+Zasady gry zaimplementował Dr inż. Piotr Syga\cite{reversiimpl}. \\
+Implementacja pozwala na zmierzenie się ze sobą dwóch dowolnych graczy,
+gdzie graczami mogą być Minimax, Alfa-beta cięcie bądź człowiek.
+Wybranymi miarami stanu planszy zostały:
+\begin{itemize}
+    \item Liczba posiadanych pionków
+    \item Elastyczność - liczba dostępnych ruchów
+    \item Blokowanie - ujemna liczba dostępnych ruchów przeciwnika (kara za to, że ma ruchy)
+    \item Liczba pionków przeciwnika sąsiadująca z pionkami algorytmu \\
+    (potencjalne okazje do przejęcia)
+    \item Liczba pionków przeciwnika sąsiadujących z pustymi polami. \\
+    (potencjalne okazje do przejęcia)
+\end{itemize}
+W programie można stworzyć własne tabele wag (strategii),
+jednak zostało umieszczone w nim kilka przykładowych:
+\begin{center}
+    \begin{tabular}{| m{5em} | m{4em} | m{5.5em} | m{5em} | m{4em} | m{3em} |}
+        \hline
+        nazwa & liczba pionków & elastyczność & blokowanie & sąsiedzi pionków przeciwnika & okazje \\
+        \hline
+        aggressive & 4.0 & 2.0 & 0.5 & 1.5 & 2.0 \\
+        \hline
+        controlling & 1.0 & 5.0 & 5.0 & 1.0 & 1.0 \\
+        \hline
+        balanced & 1.0 & 2.0 & 2.0 & 1.0 & 1.0 \\
+        \hline
+    \end{tabular}
+\end{center}
+
+Kod znajduje się na \href{https://github.com/qriaa/sem6-si/tree/main/lista2}{tej stronie}.
+
+\section{Rezultaty}
+Podstawowymi mierzalnymi parametrami do porównania
+są czas wykonania oraz ilość odwiedzonych węzłów.
+
+Przedstawione zostaną dane przykładowej partii między algorytmem Minimax
+a jego zmodyfikowanej wersji z Alfa-beta cięciem.
+
+Parametrami obu algorytmów są: \\
+\texttt{
+    Głębokość: 4
+    Strategia: balanced
+}
+\begin{center}
+    \begin{tabular}{ | m{4em} | m{4.5em} | m{3em} | m{4em} | m{4.5em} | m{3em} |}
+        \hline
+        Minimax & czas & węzły & Alfa-beta & czas & węzły \\
+        \hline
+        (2, 4) & 0.100894 & 317 & (4, 5) & 0.063711 & 198 \\
+        \hline
+        (5, 2) & 0.267528 & 847 & (2, 3) & 0.112144 & 344 \\
+        \hline
+        (2, 5) & 0.82 & 2573 & (2, 2) & 0.246547 & 742 \\
+        \hline
+        (4, 2) & 1.18808 & 3736 & (5, 3) & 0.215184 & 654 \\
+        \hline
+        (3, 2) & 2.10616 & 6834 & (4, 1) & 0.635999 & 1949 \\
+        \hline
+        (3, 1) & 4.601079 & 15131 & (1, 5) & 0.680569 & 2200 \\
+        \hline
+        (5, 4) & 5.337107 & 18047 & (3, 0) & 0.761715 & 2505 \\
+        \hline
+        (1, 3) & 4.264432 & 14603 & (5, 5) & 0.673579 & 2231 \\
+        \hline
+        (3, 5) & 6.348387 & 22341 & (6, 5) & 0.903315 & 3040 \\
+        \hline
+        (6, 4) & 9.784564 & 35112 & (1, 2) & 0.829852 & 2851 \\
+        \hline
+        (5, 1) & 11.259568 & 40868 & (7, 4) & 1.229304 & 4242 \\
+        \hline
+        (5, 6) & 7.426985 & 27506 & (6, 6) & 2.254521 & 8138 \\
+        \hline
+        (7, 7) & 11.504372 & 43884 & (6, 2) & 2.071016 & 7393 \\
+        \hline
+        (4, 0) & 13.258387 & 52211 & (6, 3) & 1.585612 & 5695 \\
+        \hline
+        (1, 4) & 8.666449 & 35624 & (2, 0) & 0.994522 & 3671 \\
+        \hline
+        (7, 6) & 11.038945 & 47129 & (1, 1) & 1.226644 & 4705 \\
+        \hline
+        (4, 6) & 8.912769 & 40016 & (3, 7) & 1.217893 & 4968 \\
+        \hline
+        (2, 1) & 8.762945 & 39649 & (7, 5) & 1.064265 & 4432 \\
+        \hline
+        (4, 7) & 7.298406 & 34770 & (0, 4) & 0.331787 & 1397 \\
+        \hline
+        (0, 0) & 4.024789 & 20193 & (1, 0) & 0.163105 & 719 \\
+        \hline
+        (7, 3) & 2.349871 & 11774 & (7, 2) & 0.178921 & 858 \\
+        \hline
+        (6, 1) & 1.40726 & 7741 & (0, 2) & 0.164144 & 814 \\
+        \hline
+        (0, 3) & 0.595515 & 3571 & (6, 0) & 0.131961 & 689 \\
+        \hline
+        (5, 0) & 0.540275 & 3338 & (3, 6) & 0.077873 & 442 \\
+        \hline
+        (2, 7) & 0.277857 & 1861 & (2, 6) & 0.061833 & 375 \\
+        \hline
+        (0, 5) & 0.116634 & 838 & (0, 6) & 0.019758 & 130 \\
+        \hline
+        (0, 1) & 0.040778 & 332 & (1, 6) & 0.007116 & 52 \\
+        \hline
+        (7, 0) & 0.011538 & 121 & (5, 7) & 0.00296 & 27 \\
+        \hline
+        (0, 7) & 0.001524 & 30 & (1, 7) & 0.000286 & 5 \\
+        \hline
+        (6, 7) & 0.000165 & 4 & (7, 1) & 6.4e-05 & 2 \\
+        \hline
+    \end{tabular}
+\end{center}
+\texttt{Zwycięstwo gracza 1. Tur: 60}
+
+Programy odwiedzają najwięcej węzłów w środkowej fazie gry,
+zaś na początku i końcu jest ich o wiele mniej.
+Alfa-beta cięcie jest zdecydowanie szybszy - odwiedza o wiele mniej węzłów.
+Nie były one sprawdzane, ponieważ i tak nie miałoby to sensu ze względu na brak poprawy wyniku.
+Zmiana rozpoczynającego algorytmu nie ma wpływu na partię - algorytmy wykonują te same ruchy.
+Ze względu na brak różnicy w "myśleniu" algorytmów a zdecydowanie szybszym czasem wykonania od teraz
+wszystkie testy będą wykonywane Alfa-beta cięciem.
+
+Porównanie zmierzających się ze sobą strategii: \\
+\texttt{Głębokość: 3}
+\begin{center}
+    \begin{tabular}{| m{5em} | m{5em} | m{5em} |}
+        \hline
+        Gracz 1. & Gracz 2. & Zwycięstwo \\
+        \hline
+        controlling & aggressive & 2 \\
+        \hline
+        aggressive & balanced & 2 \\
+        \hline
+        controlling & balanced & 1 \\
+        \hline
+        aggressive & controlling & 2 \\
+        \hline
+        balanced & aggressive & 2 \\
+        \hline
+        balanced & controlling & 2 \\
+        \hline
+    \end{tabular}
+\end{center}
+
+W przypadku pojedynku balans a kontrola wygrywa zawsze kontrola.
+Mecze z agresywnym zawodnikiem bywają chaotyczne - ciężko stwierdzić kto wygra.
+
+Porównanie głębokości i wygranych:
+\begin{center}
+    \begin{tabular}{| m{5em} | m{5em} | m{5em} | m{5em} |}
+        \hline
+        Strategia & Gracz 1. & Gracz 2. & Zwycięstwo \\
+        \hline
+        controlling & 2 & 4 & 2 \\
+        \hline
+        aggressive & 2 & 4 & 2 \\
+        \hline
+        balanced & 2 & 4 & 2 \\
+        \hline
+        controlling & 4 & 2 & 1 \\
+        \hline
+        aggressive & 4 & 2 & 1 \\
+        \hline
+        balanced & 4 & 2 & 1 \\
+        \hline
+    \end{tabular}
+\end{center}
+Zdecydowanie wyższe prawdopodobieństwo na wygraną ma algorytm z większą głębokością.
+
+\section{Podsumowanie}
+Alfa-beta cięcie jest zdecydowanie szybszym algorytmem.
+Nie traci on również na jakości rozwiązania.
+
+Bardzo ważnym jest znalezienie dobrych metryk sytuacji stanu gry,
+a następnie dobranie odpowiedniego wektoru wag. Jeśli to nie zwycięstwo jest celem a rekreacja,
+to można stworzyć różne, ciekawe strategie przeciwko którym można staczać ciekawe rozgrywki.
+Oprócz tego można wprowadzić "anty-strategie", dzięki którym można obniżyć poziom kompetencji
+algorytmu i sprawić, że rozgrywka będzie mniej wymagająca dla nowych graczy.
+
+
+\printbibliography
 \end{document}
