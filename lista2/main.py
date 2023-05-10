@@ -358,7 +358,7 @@ class Game:
             def get_human_move():
                 row, col = map(int, input("Enter row and column: ").split())
                 return (row, col)
-            return cls("human", get_human_move, None, None)
+            return cls("human", get_human_move, None, None, None)
 
         @classmethod
         def get_minmax_player(cls, minmax_searchtree):
